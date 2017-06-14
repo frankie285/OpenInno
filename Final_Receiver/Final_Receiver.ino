@@ -29,6 +29,7 @@ byte pixel[7];
 byte* pixelArrayPtr = 0;
 int headerIndex = 0;
 int pixelIndex = 0;
+int pixelCounter = 0;
 
 enum states {
   START = 1,
@@ -91,25 +92,21 @@ void loop(void) {
           header[headerIndex] = readByte;
           headerIndex++;
           currentState = DATA;
-          if (DEBUG)
-          {
-            Serial.println("Header: StartByte Found");
-          }
         }
         break;
 
       case DATA:
-        if (headerIndex < 22) {
-          header[headerIndex] = readByte;
-          headerIndex++;
-        }
-        else {
-          if (header[21] == stopByte)
+        header[headerIndex] = readByte;
+        headerIndex++;
+
+        if (headerIndex == 22) //Header vol
+        {
+          if (header[21] == stopByte) //Check stopbyte
           {
             fillHeader();
             if (checkLocation()) {
               myXAndY(&myX, &myY);
-              currentState = PIXEL;
+              currentState = PIXEL; //Header is goed -> haal pixel data op
               break;
             }
           }
@@ -123,9 +120,9 @@ void loop(void) {
       case PIXEL:
         pixel[pixelIndex] = readByte;
         pixelIndex++;
-
-        if(pixelIndex >= 7){
+        if (pixelIndex >= 7) {
           pixelIndex = 0;
+          pixelCounter++;
 
           cPixel.xPixel = arrayToInt(pixel[0], pixel[1]);
           cPixel.yPixel = arrayToInt(pixel[2], pixel[3]);
@@ -133,14 +130,35 @@ void loop(void) {
           cPixel.green = pixel[5];
           cPixel.blue = pixel[6];
 
-          if(cPixel.xPixel == myX && cPixel.yPixel == myY){
-            Serial.print(cPixel.red);
-            Serial.print(",");
-            Serial.print(cPixel.green);
-            Serial.print(",");
-            Serial.print(cPixel.blue);
-            Serial.println();
+          /*
+          Serial.print("xWaarde: ");
+          Serial.print(cPixel.xPixel);
+          Serial.print(" yWaarde: ");
+          Serial.print(cPixel.yPixel);
+          Serial.print(" red: ");
+          Serial.print(cPixel.red);
+          Serial.print(" green:");
+          Serial.print(cPixel.green);
+          Serial.print(" blue: ");
+          Serial.print(cPixel.blue);
+          Serial.println();
+          */
 
+          
+                    if(cPixel.xPixel == myX && cPixel.yPixel == myY){
+                      Serial.print(cPixel.red);
+                      Serial.print(",");
+                      Serial.print(cPixel.green);
+                      Serial.print(",");
+                      Serial.print(cPixel.blue);
+                      Serial.println();
+
+                      currentState = START;
+                    }
+          
+
+          if (pixelCounter >= (cHeader.pixVert * cHeader.pixHor)) {
+            pixelCounter = 0;
             currentState = START;
           }
         }
@@ -175,6 +193,7 @@ void fillHeader() {
   cHeader.seLon = arrayToLong(header[13], header[14], header[15], header[16]);
   cHeader.pixVert = arrayToInt(header[17], header[18]);
   cHeader.pixHor = arrayToInt(header[19], header[20]);
+  /*
   if (DEBUG) {
     Serial.print("NWLAT: ");
     Serial.println(cHeader.nwLat, 5);
@@ -189,6 +208,7 @@ void fillHeader() {
     Serial.print("PIXHON: ");
     Serial.println(cHeader.pixHor);
   }
+  */
 }
 
 void displayInfo()
@@ -197,12 +217,6 @@ void displayInfo()
   {
     GPSLat = gps.location.lat();
     GPSLon = gps.location.lng();
-    if (DEBUG) {
-      Serial.print(GPSLat, 6);
-      Serial.print(" , ");
-      Serial.print(GPSLon, 6);
-      Serial.println();
-    }
   }
 }
 
