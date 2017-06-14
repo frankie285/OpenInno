@@ -55,6 +55,8 @@ void setup(void){
   radio.openReadingPipe(1,pipe);
   radio.disableCRC();
   radio.startListening();
+
+  ss.begin(GPSBaud);
 }
 void loop(void){
   while (ss.available() > 0)
