@@ -2,12 +2,22 @@
 #include <RF24.h>
 #include <RF24_config.h>
 #include <SPI.h>
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
 
 #define DEBUG 1  //Set to 0 for no debugging text
 
 int msg[1];
 RF24 radio(9,10);
+static const int RXPin = 3, TXPin = 5; 
+static const uint32_t GPSBaud = 4800;
 const uint64_t pipe = 0xE8E8F0F0E1LL;
+
+TinyGPSPlus gps;
+SoftwareSerial ss(RXPin, TXPin);
+
+double GPSLat;
+double GPSLon;
 
 byte startByte = 100;
 byte stopByte = 200;
@@ -47,6 +57,10 @@ void setup(void){
   radio.startListening();
 }
 void loop(void){
+  while (ss.available() > 0)
+    if (gps.encode(ss.read()))
+      displayInfo();
+  
   if (radio.available()){
       radio.read(msg, 1);
       byte readByte = msg[0];
@@ -139,5 +153,20 @@ void fillHeader(){
             Serial.print("PIXHON: ");
             Serial.println(cHeader.pixHor); 
           }
+}
+
+void displayInfo()
+{
+  if (gps.location.isValid())
+  {
+    GPSLat = gps.location.lat();
+    GPSLon = gps.location.lng();
+    if(DEBUG){
+      Serial.print(GPSLat, 6);
+      Serial.print(" , ");
+      Serial.print(GPSLon, 6);
+      Serial.println(); 
+    }
+  }
 }
 
