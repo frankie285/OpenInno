@@ -110,15 +110,27 @@ void loop(void){
             double pixelHeight = (cHeader.nwLat - cHeader.seLat) / cHeader.pixVert;
             double pixelWidth = (cHeader.seLon - cHeader.nwLon) / cHeader.pixHor;
 
+            double distanceToNwLat = cHeader.nwLat - GPSLat;
+            double distanceToNwLon = GPSLon - cHeader.nwLon;
+
+            int myY = (int)(distanceToNwLat / pixelHeight);
+            int myX = (int)(distanceToNwLon / pixelWidth);
             
+            if(DEBUG){
+              Serial.print("myX: ");
+              Serial.println(myX);
+              Serial.print("myY: ");
+              Serial.println(myY);
+            }
+            currentState = START;
           }
           
+          //free(pixelArrayPtr);
+          //pixelArrayPtr = new byte[cHeader.pixVert * cHeader.pixHor * 7];
           
-          free(pixelArrayPtr);
-          pixelArrayPtr = new byte[cHeader.pixVert * cHeader.pixHor * 7];
-          
-
-        currentState = START;
+          else{
+           currentState = START; 
+          }
         break;
       }
   }
