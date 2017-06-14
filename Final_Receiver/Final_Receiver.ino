@@ -19,11 +19,16 @@ SoftwareSerial ss(RXPin, TXPin);
 double GPSLat;
 double GPSLon;
 
+int myX;
+int myY;
+
 byte startByte = 100;
 byte stopByte = 200;
 byte header[22];
+byte pixel[7];
 byte* pixelArrayPtr = 0;
 int headerIndex = 0;
+int pixelIndex = 0;
 
 enum states {
   START = 1,
@@ -42,6 +47,16 @@ typedef struct {
 } structHeader;
 
 structHeader cHeader;
+
+typedef struct {
+  int xPixel;
+  int yPixel;
+  int red;
+  int green;
+  int blue;
+} structPixel;
+
+structPixel cPixel;
 
 states currentState = START;
 
@@ -89,40 +104,45 @@ void loop(void) {
           headerIndex++;
         }
         else {
-          currentState = CHECKHEADER;
+          if (header[21] == stopByte)
+          {
+            fillHeader();
+            if (checkLocation()) {
+              myXAndY(&myX, &myY);
+              currentState = PIXEL;
+              break;
+            }
+          }
+          else
+          {
+            currentState = START;
+          }
         }
-        break;
-
-      case CHECKHEADER:
-        if (header[21] == stopByte) {
-          fillHeader();
-          currentState = PIXEL;
-        }
-        else {
-          currentState = START;
-        }
-
         break;
 
       case PIXEL:
-        bool locationValid = checkLocation();
-        if (locationValid) {
+        pixel[pixelIndex] = readByte;
+        pixelIndex++;
 
-          int x = 0;
-          int y = 0;
+        if(pixelIndex >= 7){
+          pixelIndex = 0;
 
-          myXAndY(&x, &y);
-          if (DEBUG) {
-            Serial.print("myX: ");
-            Serial.println(x);
-            Serial.print("myY: ");
-            Serial.println(y);
+          cPixel.xPixel = arrayToInt(pixel[0], pixel[1]);
+          cPixel.yPixel = arrayToInt(pixel[2], pixel[3]);
+          cPixel.red = pixel[4];
+          cPixel.green = pixel[5];
+          cPixel.blue = pixel[6];
+
+          if(cPixel.xPixel == myX && cPixel.yPixel == myY){
+            Serial.print(cPixel.red);
+            Serial.print(",");
+            Serial.print(cPixel.green);
+            Serial.print(",");
+            Serial.print(cPixel.blue);
+            Serial.println();
+
+            currentState = START;
           }
-          
-          currentState = START;
-        }
-        else {
-          currentState = START;
         }
         break;
     }
