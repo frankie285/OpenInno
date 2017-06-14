@@ -105,6 +105,15 @@ void loop(void){
         break;
 
         case PIXEL:
+          bool locationValid = checkLocation();
+          if(locationValid){
+            double pixelHeight = (cHeader.nwLat - cHeader.seLat) / cHeader.pixVert;
+            double pixelWidth = (cHeader.seLon - cHeader.nwLon) / cHeader.pixHor;
+
+            
+          }
+          
+          
           free(pixelArrayPtr);
           pixelArrayPtr = new byte[cHeader.pixVert * cHeader.pixHor * 7];
           
@@ -169,6 +178,15 @@ void displayInfo()
       Serial.print(GPSLon, 6);
       Serial.println(); 
     }
+  }
+}
+
+bool checkLocation(){
+  if(GPSLat <= cHeader.nwLat && GPSLat >= cHeader.seLat && GPSLon >= cHeader.nwLon && GPSLon <= cHeader.seLon){
+    return true;
+  }
+  else{
+    return false;
   }
 }
 
