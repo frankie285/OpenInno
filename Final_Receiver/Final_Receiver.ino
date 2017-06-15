@@ -4,6 +4,11 @@
 #include <SPI.h>
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
+#include "FastLED.h"
+
+#define NUM_LEDS 5 //aantal leds aan te sturen
+#define DATA_PIN 6 //pin waarop de data kabel van de strip wordt aangesloten.
+CRGB leds[5]; // ledstrip object.
 
 #define DEBUG 1  //Set to 0 for no debugging text
 
@@ -73,6 +78,13 @@ void setup(void) {
   radio.startListening();
 
   ss.begin(GPSBaud);
+
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+
+  for (int i = 0; i < NUM_LEDS; i++) { // de 5 leds worden aangezet op wit.
+    leds[i] = CRGB(255, 255, 255);
+  }
+  FastLED.show();
 }
 void loop(void) {
   while (ss.available() > 0)
@@ -89,6 +101,7 @@ void loop(void) {
         headerIndex = 0;
 
         if (readByte == startByte) {
+          Serial.println("header found");
           header[headerIndex] = readByte;
           headerIndex++;
           currentState = DATA;
@@ -131,31 +144,32 @@ void loop(void) {
           cPixel.blue = pixel[6];
 
           /*
-          Serial.print("xWaarde: ");
-          Serial.print(cPixel.xPixel);
-          Serial.print(" yWaarde: ");
-          Serial.print(cPixel.yPixel);
-          Serial.print(" red: ");
-          Serial.print(cPixel.red);
-          Serial.print(" green:");
-          Serial.print(cPixel.green);
-          Serial.print(" blue: ");
-          Serial.print(cPixel.blue);
-          Serial.println();
+            Serial.print("xWaarde: ");
+            Serial.print(cPixel.xPixel);
+            Serial.print(" yWaarde: ");
+            Serial.print(cPixel.yPixel);
+            Serial.print(" red: ");
+            Serial.print(cPixel.red);
+            Serial.print(" green:");
+            Serial.print(cPixel.green);
+            Serial.print(" blue: ");
+            Serial.print(cPixel.blue);
+            Serial.println();
           */
 
-          
-                    if(cPixel.xPixel == myX && cPixel.yPixel == myY){
-                      Serial.print(cPixel.red);
-                      Serial.print(",");
-                      Serial.print(cPixel.green);
-                      Serial.print(",");
-                      Serial.print(cPixel.blue);
-                      Serial.println();
 
-                      currentState = START;
-                    }
-          
+          if (cPixel.xPixel == myX && cPixel.yPixel == myY) {
+            setColor(cPixel.red, cPixel.green, cPixel.blue);
+            Serial.print(cPixel.red);
+            Serial.print(",");
+            Serial.print(cPixel.green);
+            Serial.print(",");
+            Serial.print(cPixel.blue);
+            Serial.println();
+
+            currentState = START;
+          }
+
 
           if (pixelCounter >= (cHeader.pixVert * cHeader.pixHor)) {
             pixelCounter = 0;
@@ -194,7 +208,7 @@ void fillHeader() {
   cHeader.pixVert = arrayToInt(header[17], header[18]);
   cHeader.pixHor = arrayToInt(header[19], header[20]);
   /*
-  if (DEBUG) {
+    if (DEBUG) {
     Serial.print("NWLAT: ");
     Serial.println(cHeader.nwLat, 5);
     Serial.print("NWLON: ");
@@ -207,7 +221,7 @@ void fillHeader() {
     Serial.println(cHeader.pixVert);
     Serial.print("PIXHON: ");
     Serial.println(cHeader.pixHor);
-  }
+    }
   */
 }
 
@@ -240,3 +254,9 @@ void myXAndY(int* x, int* y) {
   *x = (int)(distanceToNwLon / pixelWidth);
 }
 
+void setColor(int r, int g, int b){
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CRGB(r,g,b); 
+  }
+  FastLED.show();
+}
